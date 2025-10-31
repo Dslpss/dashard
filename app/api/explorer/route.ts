@@ -88,9 +88,12 @@ export async function GET() {
     }
 
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    // Return error details to help debugging in the deployed environment.
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("/api/explorer error:", err);
     return NextResponse.json(
-      { error: "Falha ao montar árvore do explorer" },
+      { error: "Falha ao montar árvore do explorer", message: msg },
       { status: 500 }
     );
   }

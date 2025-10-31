@@ -16,17 +16,41 @@ export default function FileExplorer({
   onOpenAnnotation?: (id?: string | null) => void;
 }) {
   const [tree, setTree] = useState<Node[] | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loadingAction, setLoadingAction] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
   async function fetchTree() {
     try {
+      setErrorMsg(null);
       const r = await fetch("/api/explorer");
-      const data = await r.json();
-      setTree(data);
+      let data: unknown = null;
+      try {
+        data = await r.json();
+      } catch (e) {
+        console.warn("Explorer: response not json", e);
+      }
+
+      if (!r.ok) {
+        const obj = data as Record<string, unknown> | null;
+        const msg = obj && typeof obj.message === "string" ? obj.message : (obj && (typeof obj.error === "string" ? obj.error : null)) || r.statusText;
+        setErrorMsg(String(msg ?? "Erro ao carregar explorer"));
+        setTree([]);
+        return;
+      }
+
+      if (!Array.isArray(data)) {
+        console.error("Explorer: unexpected response", data);
+        setErrorMsg("Resposta inesperada do servidor");
+        setTree([]);
+        return;
+      }
+
+      setTree(data as Node[]);
     } catch (e) {
       console.error("Explorer fetch error", e);
+      setErrorMsg("Erro ao carregar explorer");
     }
   }
 
@@ -414,6 +438,7 @@ export default function FileExplorer({
         </button>
       </div>
       {!tree && <div className="explorer-loading">carregando...</div>}
+      {errorMsg && <div className="explorer-error">{errorMsg}</div>}
       {tree && renderNodes(tree)}
     </div>
   );
