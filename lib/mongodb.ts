@@ -14,12 +14,19 @@ declare global {
 export async function getDb(): Promise<Db> {
   if (global._mongoClient) return global._mongoClient.db;
 
-  const uri = process.env.MONGODB_URI as string | undefined;
+  // Read and sanitize env vars at call time. Some deployment UIs allow
+  // users to include surrounding quotes which break the connection string
+  // (e.g. "mongodb+srv://..."). Trim and strip surrounding single/double
+  // quotes to be more forgiving.
+  const rawUri = process.env.MONGODB_URI as string | undefined;
   const dbName = (process.env.MONGODB_DB as string) || DEFAULT_DB;
 
-  if (!uri) {
+  if (!rawUri) {
     throw new Error("MONGODB_URI não está definido nas variáveis de ambiente");
   }
+
+  // remove surrounding whitespace and optional surrounding quotes
+  const uri = rawUri.trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
 
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
   await client.connect();
