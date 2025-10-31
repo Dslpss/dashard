@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "./.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[context.production.environment]
+  # Example environment variables to set in Netlify UI instead of committing them
+  # MONGODB_URI = "..."
+  # MONGODB_DB = "dashard"
+  # ADMIN_USER = "..."
+  # ADMIN_PASS = "..."
+  # JWT_SECRET = "..."

@@ -7,18 +7,22 @@ if (!uri) {
   throw new Error("MONGODB_URI não está definido nas variáveis de ambiente");
 }
 
-let cachedClient: MongoClient | null = null;
-let cachedDb: Db | null = null;
+// In serverless environments (Netlify, Vercel), modules can be reloaded per
+// invocation. Use a global cache to reuse the MongoClient across invocations
+// and avoid exhausting connections.
+declare global {
+  var _mongoClient: { client: MongoClient; db: Db } | undefined;
+}
 
 export async function getDb(): Promise<Db> {
-  if (cachedDb && cachedClient) return cachedDb;
+  if (global._mongoClient) return global._mongoClient.db;
 
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
   await client.connect();
   const db = client.db(dbName);
 
-  cachedClient = client;
-  cachedDb = db;
+  // store on global to allow reuse across lambda invocations
+  global._mongoClient = { client, db };
   return db;
 }
 
