@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+async function resolveParams(context: unknown) {
+  const raw = (context as { params?: unknown })?.params;
+  if (!raw) return {} as Record<string, string>;
+  if (raw && typeof (raw as { then?: unknown }).then === "function") {
+    return await (raw as Promise<Record<string, string>>);
+  }
+  return raw as Record<string, string>;
+}
+
+export async function PUT(req: Request, context: unknown) {
   try {
-    const { id } = params;
+    const { id } = await resolveParams(context);
     if (!ObjectId.isValid(id))
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
 
@@ -44,12 +50,9 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(_req: Request, context: unknown) {
   try {
-    const { id } = params;
+    const { id } = await resolveParams(context);
     if (!ObjectId.isValid(id))
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
 

@@ -69,8 +69,31 @@ export default function AnnotationEditor({ annotationId }: Props) {
     const before = content.slice(0, start);
     const selected = content.slice(start, end);
     const after = content.slice(end);
+    // normalize selected code spacing/indentation
+    function normalizeCode(s: string) {
+      if (!s) return "";
+      // unify line endings
+      let t = s.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+      // trim leading/trailing blank lines
+      t = t.replace(/^\n+/, "").replace(/\n+$/, "");
+      const lines = t.split("\n");
+      // compute minimum indent (in spaces) among non-empty lines
+      let minIndent: number | null = null;
+      for (const line of lines) {
+        if (line.trim() === "") continue;
+        const m = line.match(/^\s*/);
+        const len = m ? m[0].length : 0;
+        if (minIndent === null || len < minIndent) minIndent = len;
+      }
+      if (minIndent && minIndent > 0) {
+        t = lines.map((l) => l.slice(minIndent!)).join("\n");
+      }
+      return t;
+    }
+
+    const normalized = normalizeCode(selected || "");
     const fence = "```" + (codeLang ? codeLang : "");
-    const codeBlock = fence + "\n" + selected + "\n" + "```\n";
+    const codeBlock = fence + "\n" + normalized + "\n" + "```\n";
     const newContent = before + codeBlock + after;
     setContent(newContent);
     setDirty(true);
@@ -162,6 +185,80 @@ export default function AnnotationEditor({ annotationId }: Props) {
         onChange={(e) => {
           setContent(e.target.value);
           setDirty(true);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Tab") {
+            e.preventDefault();
+            const ta = textareaRef.current;
+            if (!ta) return;
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            const TAB = "    ";
+            if (start !== end) {
+              // indent/unindent selected lines
+              const selected = content.slice(start, end);
+              const lines = selected.split("\n");
+              if (e.shiftKey) {
+                // unindent
+                const un = lines
+                  .map((l) => {
+                    if (l.startsWith(TAB)) return l.slice(TAB.length);
+                    if (l.startsWith("\t")) return l.slice(1);
+                    return l.replace(/^ {1,4}/, "");
+                  })
+                  .join("\n");
+                const newContent =
+                  content.slice(0, start) + un + content.slice(end);
+                setContent(newContent);
+                setDirty(true);
+                requestAnimationFrame(() => {
+                  ta.selectionStart = start;
+                  ta.selectionEnd = start + un.length;
+                });
+              } else {
+                const ind = lines.map((l) => TAB + l).join("\n");
+                const newContent =
+                  content.slice(0, start) + ind + content.slice(end);
+                setContent(newContent);
+                setDirty(true);
+                requestAnimationFrame(() => {
+                  ta.selectionStart = start;
+                  ta.selectionEnd = start + ind.length;
+                });
+              }
+            } else {
+              if (e.shiftKey) {
+                // remove indent from current line if present
+                const lineStart = content.lastIndexOf("\n", start - 1) + 1;
+                const prefix = content.slice(lineStart, start);
+                let remove = 0;
+                if (prefix.endsWith("\t")) remove = 1;
+                else {
+                  const m = prefix.match(/( {1,4})$/);
+                  if (m) remove = m[1].length;
+                }
+                if (remove > 0) {
+                  const newContent =
+                    content.slice(0, start - remove) + content.slice(start);
+                  setContent(newContent);
+                  setDirty(true);
+                  requestAnimationFrame(() => {
+                    const pos = start - remove;
+                    ta.selectionStart = ta.selectionEnd = pos;
+                  });
+                }
+              } else {
+                const newContent =
+                  content.slice(0, start) + TAB + content.slice(end);
+                setContent(newContent);
+                setDirty(true);
+                requestAnimationFrame(() => {
+                  const pos = start + TAB.length;
+                  ta.selectionStart = ta.selectionEnd = pos;
+                });
+              }
+            }
+          }
         }}
         placeholder="Escreva sua anotação aqui..."
         style={{
