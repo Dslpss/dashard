@@ -1,26 +1,192 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #1e1e1e;
+  --foreground: #d4d4d4;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* removed unknown @theme at-rule; variables are declared in :root above */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar - Obsidian style */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 6px;
+  border: 2px solid #1e1e1e;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4e4e4e;
+}
+
+/* App layout for explorer sidebar */
+.app-root {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 300px;
+  background: #121212;
+  border-right: 1px solid #2a2a2a;
+  padding: 10px 8px;
+  box-sizing: border-box;
+  color: #cfcfcf;
+  overflow: auto;
+}
+
+.sidebar-header {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #262626;
+  margin-bottom: 8px;
+}
+
+.main-content {
+  flex: 1 1 auto;
+  /* reduzir gap superior e inferior: top 8px, right/left 20px, bottom 12px */
+  padding: 8px 20px 12px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Bring the inline editor slightly up so it sits close under the page header */
+.annotation-editor {
+  margin-top: 0; /* zero to avoid overlap; spacing handled by main-content gap */
+}
+
+.file-explorer {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.explorer-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 8px;
+}
+
+.explorer-list .explorer-list {
+  padding-left: 16px; /* nested lists more indented */
+}
+
+.explorer-item {
+  display: block; /* allow nested UL to appear below */
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.explorer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.explorer-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+
+.explorer-file .explorer-icon,
+.explorer-name .explorer-icon {
+  margin-right: 6px;
+}
+
+.explorer-item.directory > .explorer-name {
+  color: #9cdcfe;
+}
+
+.explorer-item.file > .explorer-file {
+  color: #d4d4d4;
+  padding-left: 18px;
+}
+
+.explorer-toggle {
+  background: transparent;
+  border: none;
+  color: #9aa4a6;
+  padding: 0 6px 0 0;
+  cursor: pointer;
+}
+
+.explorer-toggle:focus {
+  outline: none;
+}
+
+.explorer-name,
+.explorer-file {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.explorer-loading {
+  color: #9aa4a6;
+  padding: 8px;
+}
+
+.explorer-selected {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+.explorer-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0 10px 0;
+  align-items: center;
+}
+
+.icon-button {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.icon-button:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.icon-button.delete {
+  color: #f07178;
+}
+.icon-button.delete:hover {
+  background: rgba(240, 113, 120, 0.06);
+  border-color: rgba(240, 113, 120, 0.08);
+}
+
+/* When an annotation editor is open, hide the "Criar curso" / new course panel in the page */
+.main-content.editor-open #new {
+  display: none;
 }
