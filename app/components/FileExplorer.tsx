@@ -34,7 +34,11 @@ export default function FileExplorer({
 
       if (!r.ok) {
         const obj = data as Record<string, unknown> | null;
-        const msg = obj && typeof obj.message === "string" ? obj.message : (obj && (typeof obj.error === "string" ? obj.error : null)) || r.statusText;
+        const msg =
+          obj && typeof obj.message === "string"
+            ? obj.message
+            : (obj && (typeof obj.error === "string" ? obj.error : null)) ||
+              r.statusText;
         setErrorMsg(String(msg ?? "Erro ao carregar explorer"));
         setTree([]);
         return;
