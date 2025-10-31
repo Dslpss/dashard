@@ -1,11 +1,8 @@
 import { MongoClient, Db } from "mongodb";
 
-const uri = process.env.MONGODB_URI as string;
-const dbName = (process.env.MONGODB_DB as string) || "dashard";
-
-if (!uri) {
-  throw new Error("MONGODB_URI não está definido nas variáveis de ambiente");
-}
+// Delay reading env vars until getDb is called so import-time errors don't
+// crash route module loading and can be handled by the caller's try/catch.
+const DEFAULT_DB = "dashard";
 
 // In serverless environments (Netlify, Vercel), modules can be reloaded per
 // invocation. Use a global cache to reuse the MongoClient across invocations
@@ -16,6 +13,13 @@ declare global {
 
 export async function getDb(): Promise<Db> {
   if (global._mongoClient) return global._mongoClient.db;
+
+  const uri = process.env.MONGODB_URI as string | undefined;
+  const dbName = (process.env.MONGODB_DB as string) || DEFAULT_DB;
+
+  if (!uri) {
+    throw new Error("MONGODB_URI não está definido nas variáveis de ambiente");
+  }
 
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
   await client.connect();
